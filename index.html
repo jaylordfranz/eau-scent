@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eau Scent-Product Listing</title>
+  <link rel="icon" href="images/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+  <style>
+    .product-card {
+      padding: 10px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .product-slider img {
+      height: 150px;
+      object-fit: cover;
+    }
+    .icon-text {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .cart-badge {
+      position: relative;
+    }
+    .cart-badge .badge {
+      position: absolute;
+      top: -5px;
+      right: -10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center mb-5">Eau de parfum</h1>
+    <div class="row" id="product-list"></div>
+    <a href="cart.html" class="btn btn-primary mt-3 cart-badge">
+      <i class="bi bi-cart"></i> Go to Cart
+      <span class="badge bg-danger" id="cart-count">0</span>
+    </a>
+  </div>
+
+  <!-- Quantity Input Modal -->
+  <div class="modal fade" id="quantityModal" tabindex="-1" aria-labelledby="quantityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="quantityModalLabel">Enter Quantity</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="number" id="quantityInput" class="form-control" placeholder="Enter quantity" min="1">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="confirmQuantity()">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmationModalLabel">Added to Cart</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Product successfully added to your cart.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedProductId = null;
+    const products = [
+      { id: 1, name: "Mystique d'Or", description: "Blackcurrant, jasmine, amber, oud, leather.", price: 1000, rating: 4.5, reviews: 120, deliveryDate: "2024-11-05", stock: 15, imageUrls: ["images/list-1.jpg", "images/list-9.jpg", "images/list-2.jpg"] },
+      { id: 2, name: "Celestial Veil", description: "White florals, vanilla, bergamot, musk, sandalwood.", price: 2000, rating: 4.0, reviews: 85, deliveryDate: "2024-11-10", stock: 5, imageUrls: ["images/list-2.jpg", "images/list-8.jpg", "images/list-4.jpg"] },
+      { id: 3, name: "Noir Éternel", description: "Dark chocolate, patchouli, vetiver, rose, vanilla.", price: 1500, rating: 4.8, reviews: 200, deliveryDate: "2024-11-08", stock: 10, imageUrls: ["images/list-3.jpg", "images/list-7.jpg", "images/list-6.jpg"] },
+      { id: 4, name: "Lumière du Paradis", description: "Lemon, blood orange, magnolia, cedarwood, vanilla.", price: 3500, rating: 4.3, reviews: 185, deliveryDate: "2024-11-20", stock: 7, imageUrls: ["images/list-4.jpg", "images/list-6.jpg", "images/list-8.jpg"] },
+      { id: 5, name: "Sable Velvet", description: "Cashmere wood, fig, suede, peony, tobacco.", price: 1000, rating: 4.4, reviews: 125, deliveryDate: "2024-11-15", stock: 25, imageUrls: ["images/list-5.jpg", "images/list-5.jpg", "images/list-1.jpg"] },
+      { id: 6, name: "Étoile d'Ivoire", description: "Coconut, tiare flower, amber, ylang-ylang, sandalwood.", price: 2000, rating: 4.7, reviews: 130, deliveryDate: "2024-11-13", stock: 15, imageUrls: ["images/list-6.jpg", "images/list-4.jpg", "images/list-3.jpg"] },
+      { id: 7, name: "Eclipse Royale", description: "Saffron, truffle, leather, amber, jasmine.", price: 3000, rating: 4.5, reviews: 190, deliveryDate: "2024-11-05", stock: 23, imageUrls: ["images/list-7.jpg", "images/list-3.jpg", "images/list-5.jpg"] },
+      { id: 8, name: "Rose de Minuit", description: "Dark rose, pepper, oud, vetiver, benzoin.", price: 4500, rating: 4.2, reviews: 185, deliveryDate: "2024-11-10", stock: 30, imageUrls: ["images/list-9.jpg", "images/list-2.jpg", "images/list-7.jpg"] },
+      { id: 9, name: "Orchidée Blanche", description: "White orchid, pear, lily, musk, heliotrope.", price: 5000, rating: 4.6, reviews: 175, deliveryDate: "2024-11-17", stock: 8, imageUrls: ["images/list-9.jpg", "images/list-1.jpg", "images/list-9.jpg"] }
+    ];
+
+    const renderProducts = () => {
+      const productList = document.getElementById("product-list");
+      productList.innerHTML = products.map(product => `
+        <div class="col-md-4 mb-4">
+          <div class="product-card card">
+            <!-- Image Slider -->
+            <div id="carousel${product.id}" class="carousel slide product-slider" data-bs-ride="carousel">
+              <div class="carousel-inner">
+                ${product.imageUrls.map((url, index) => `
+                  <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                    <img src="${url}" class="d-block w-100" alt="${product.name}">
+                  </div>
+                `).join("")}
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#carousel${product.id}" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#carousel${product.id}" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+            <!-- Product Info -->
+            <div class="card-body">
+              <h5 class="card-title">${product.name}</h5>
+              <div class="icon-text mb-2"><i class="bi bi-card-text"></i><span>${product.description}</span></div>
+              <div class="icon-text mb-2"><i class="bi bi-star-fill text-warning"></i><span>${product.rating}★ (${product.reviews} reviews)</span></div>
+              <div class="icon-text mb-2"><i class="bi bi-currency-dollar"></i><strong>₱${product.price}</strong></div>
+              <div class="icon-text mb-2"><i class="bi bi-calendar-check"></i><small>Delivery by: ${product.deliveryDate}</small></div>
+              <div class="icon-text mb-2"><i class="bi bi-box-seam"></i><span>Stocks left: ${product.stock}</span></div>
+              <button class="btn btn-success" onclick="showQuantityModal(${product.id})"><i class="bi bi-cart-plus"></i> Add to Cart</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+      updateCartCount();
+    };
+
+    const showQuantityModal = (productId) => {
+      selectedProductId = productId;
+      document.getElementById("quantityInput").value = 1; // Default quantity
+      const product = products.find(p => p.id === productId);
+      document.getElementById("quantityInput").setAttribute("max", product.stock);
+      new bootstrap.Modal(document.getElementById("quantityModal")).show();
+    };
+
+    const confirmQuantity = () => {
+      const quantity = parseInt(document.getElementById("quantityInput").value);
+      const product = products.find(p => p.id === selectedProductId);
+
+      if (quantity > 0 && quantity <= product.stock) {
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+        const cartItem = cart.find(item => item.id === selectedProductId);
+
+        if (cartItem) {
+          cartItem.quantity += quantity;
+        } else {
+          cart.push({ ...product, quantity });
+        }
+
+        localStorage.setItem("cart", JSON.stringify(cart));
+        new bootstrap.Modal(document.getElementById("quantityModal")).hide();
+        new bootstrap.Modal(document.getElementById("confirmationModal")).show();
+        updateCartCount();
+      } else {
+        alert("Quantity exceeds available stock.");
+      }
+    };
+
+    const updateCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+      document.getElementById("cart-count").textContent = cartCount;
+    };
+
+    document.addEventListener("DOMContentLoaded", renderProducts);
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eau Scent-Checkout</title>
+  <link rel="icon" href="images/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center mb-5">Checkout</h1>
+
+    <!-- Order Summary Section -->
+    <h3>Order Summary</h3>
+    <div id="order-summary" class="mb-4"></div>
+    
+    <!-- User Information Form -->
+    <form id="checkout-form">
+      <h3>Billing Information</h3>
+      <div class="mb-3">
+        <label for="fullName" class="form-label">Full Name</label>
+        <input type="text" class="form-control" id="fullName" required>
+      </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" required>
+      </div>
+      <div class="mb-3">
+        <label for="phone" class="form-label">Phone Number</label>
+        <input type="tel" class="form-control" id="phone" required>
+      </div>
+
+      <h3>Shipping Address</h3>
+      <div class="mb-3">
+        <label for="address" class="form-label">Address</label>
+        <input type="text" class="form-control" id="address" required>
+      </div>
+      <div class="mb-3">
+        <label for="city" class="form-label">City</label>
+        <input type="text" class="form-control" id="city" required>
+      </div>
+      <div class="mb-3">
+        <label for="zip" class="form-label">ZIP Code</label>
+        <input type="text" class="form-control" id="zip" required>
+      </div>
+
+      <!-- Payment Information -->
+      <h3>Payment Method</h3>
+      <div class="mb-3 form-check">
+        <input type="radio" class="form-check-input" id="creditCard" name="paymentMethod" value="Credit Card" required>
+        <label class="form-check-label" for="creditCard">Credit Card</label>
+      </div>
+      <div class="mb-3 form-check">
+        <input type="radio" class="form-check-input" id="paypal" name="paymentMethod" value="PayPal">
+        <label class="form-check-label" for="paypal">PayPal</label>
+      </div>
+      <div class="mb-3 form-check">
+        <input type="radio" class="form-check-input" id="cod" name="paymentMethod" value="Cash on Delivery">
+        <label class="form-check-label" for="cod">Cash on Delivery</label>
+      </div>
+
+      <!-- Total Amount -->
+      <div class="d-flex justify-content-between mt-4">
+        <h3>Total: $<span id="total-price">0</span></h3>
+        <button type="submit" class="btn btn-success">Place Order</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmationModalLabel">Confirm Your Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <h5>Order Summary:</h5>
+          <div id="modal-order-summary"></div>
+          <h5>Billing Information:</h5>
+          <p id="modal-billing-info"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Edit</button>
+          <button type="button" class="btn btn-primary" id="confirm-order">Submit Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Confirmation Modal -->
+  <div class="modal fade" id="orderConfirmationModal" tabindex="-1" aria-labelledby="orderConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="orderConfirmationModalLabel">Order Confirmation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p id="order-confirmation-message"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="redirectToHomepage()">Go to Homepage</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Retrieve cart items from localStorage and display in Order Summary
+    const displayOrderSummary = () => {
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const orderSummaryContainer = document.getElementById("order-summary");
+
+      orderSummaryContainer.innerHTML = cart.map(product => `
+        <div class="row mb-3">
+          <div class="col-md-2">
+            <img src="${product.imageUrls[0]}" class="img-fluid rounded" alt="${product.name}">
+          </div>
+          <div class="col-md-6">
+            <h5>${product.name}</h5>
+            <p>$${product.price} x ${product.quantity}</p>
+          </div>
+          <div class="col-md-4 text-end">
+            <p>$${(product.price * product.quantity).toFixed(2)}</p>
+          </div>
+        </div>
+      `).join("");
+
+      // Update total price in Order Summary
+      const totalPrice = cart.reduce((acc, product) => acc + product.price * product.quantity, 0);
+      document.getElementById("total-price").textContent = totalPrice.toFixed(2);
+    };
+
+    // Form submission handler
+    document.getElementById("checkout-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      // Collecting user information
+      const userInfo = {
+        fullName: document.getElementById("fullName").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value,
+        zip: document.getElementById("zip").value,
+        paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+        totalAmount: document.getElementById("total-price").textContent
+      };
+
+      // Display order summary in the modal
+      document.getElementById("modal-order-summary").innerHTML = `
+        ${document.getElementById("order-summary").innerHTML}
+        <h5>Total: $${userInfo.totalAmount}</h5>
+      `;
+      document.getElementById("modal-billing-info").innerHTML = `
+        Name: ${userInfo.fullName}<br>
+        Email: ${userInfo.email}<br>
+        Phone: ${userInfo.phone}<br>
+        Address: ${userInfo.address}<br>
+        City: ${userInfo.city}<br>
+        ZIP: ${userInfo.zip}<br>
+        Payment Method: ${userInfo.paymentMethod}
+      `;
+      
+      // Show the confirmation modal
+      const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+      confirmationModal.show();
+    });
+
+    // Handle order confirmation
+    document.getElementById("confirm-order").addEventListener("click", () => {
+      // Clear cart after checkout
+      localStorage.removeItem("cart"); 
+
+      // Display order confirmation message
+      document.getElementById("order-confirmation-message").innerText = `Thank you! Your order has been placed successfully.`;
+      
+      // Show the order confirmation modal
+      const orderConfirmationModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
+      orderConfirmationModal.show();
+    });
+
+    // Redirect to homepage function
+    const redirectToHomepage = () => {
+      window.location.href = "index.html"; // Redirect to homepage or confirmation page
+    };
+
+    // Render order summary on page load
+    document.addEventListener("DOMContentLoaded", displayOrderSummary);
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
