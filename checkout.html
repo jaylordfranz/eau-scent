@@ -102,6 +102,7 @@
           <p id="order-confirmation-message"></p>
         </div>
         <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="generatePDFReceipt()">Download Receipt</button>
           <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="redirectToHomepage()">Go to Homepage</button>
         </div>
       </div>
@@ -190,7 +191,101 @@
 
     // Render order summary on page load
     document.addEventListener("DOMContentLoaded", displayOrderSummary);
+
+    function generatePDFReceipt() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Set title for the receipt
+  doc.setFontSize(18);
+  doc.text("Order Receipt", 105, 20, { align: "center" });
+
+  // Set up colors for table headers and rows
+  const headerColor = [150, 150, 150];
+  const rowColor = [240, 240, 240];
+
+  // Order Summary Section
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text("Order Summary", 10, 35);
+
+  // Set initial Y-offset for the table
+  let yOffset = 45;
+
+  // Table Headers
+  doc.setFillColor(...headerColor);
+  doc.rect(10, yOffset, 180, 10, "F"); // Draw header background
+  doc.setTextColor(255, 255, 255); // White text for headers
+  doc.text("Product", 12, yOffset + 7);
+  doc.text("Price", 90, yOffset + 7);
+  doc.text("Quantity", 130, yOffset + 7);
+  doc.text("Total", 160, yOffset + 7);
+  
+  // Move yOffset down for table rows
+  yOffset += 12;
+
+  // Fetch cart items from localStorage
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const totalAmount = document.getElementById("total-price").textContent;
+
+  // Table Rows for each product in the cart
+  cart.forEach((product, index) => {
+    // Alternate row color
+    doc.setFillColor(...(index % 2 === 0 ? rowColor : [255, 255, 255]));
+    doc.rect(10, yOffset, 180, 10, "F");
+
+    // Set black text color for product details
+    doc.setTextColor(0, 0, 0);
+    doc.text(product.name, 12, yOffset + 7);
+    doc.text(`$${product.price.toFixed(2)}`, 90, yOffset + 7);
+    doc.text(product.quantity.toString(), 130, yOffset + 7);
+    doc.text(`$${(product.price * product.quantity).toFixed(2)}`, 160, yOffset + 7);
+
+    // Move down for next row
+    yOffset += 12;
+  });
+
+  // Display total amount at the end of the table
+  yOffset += 5;
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(12);
+  doc.text("Total:", 130, yOffset + 7);
+  doc.text(`$${totalAmount}`, 160, yOffset + 7);
+
+  // Billing Information Section
+  yOffset += 20;
+  doc.setFontSize(14);
+  doc.text("Billing Information", 10, yOffset);
+
+  // Move down and add billing details in a box
+  yOffset += 10;
+  doc.setFillColor(...headerColor);
+  doc.rect(10, yOffset, 180, 35, "S");
+
+  // Retrieve billing information from form inputs
+  const fullName = document.getElementById("fullName").value;
+  const email = document.getElementById("email").value;
+  const phone = document.getElementById("phone").value;
+  const address = document.getElementById("address").value;
+  const city = document.getElementById("city").value;
+  const zip = document.getElementById("zip").value;
+  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+  // Add billing information inside the box
+  doc.setFontSize(12);
+  doc.text(`Full Name: ${fullName}`, 12, yOffset + 7);
+  doc.text(`Email: ${email}`, 12, yOffset + 14);
+  doc.text(`Phone: ${phone}`, 12, yOffset + 21);
+  doc.text(`Address: ${address}`, 12, yOffset + 28);
+  doc.text(`City: ${city}`, 12, yOffset + 35);
+  doc.text(`ZIP: ${zip}`, 100, yOffset + 7);
+  doc.text(`Payment Method: ${paymentMethod}`, 100, yOffset + 14);
+
+  // Save the PDF
+  doc.save("Order_Receipt.pdf");
+}
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
